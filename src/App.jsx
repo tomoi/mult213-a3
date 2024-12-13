@@ -11,8 +11,6 @@ const imgPath = "https://www.bungie.net";
 //function to get bungie id from user-input text
 //bungieName is the name given by the user which is then split by "#" and made into an array
 async function getBungieId(bungieName) {
-  event.preventDefault();
-  console.log(bungieName);
 
   // document.getElementById("loader").style.display = "block";
   // document.getElementById("error-message").style.display = "none";
@@ -32,13 +30,14 @@ async function getBungieId(bungieName) {
     const response = await fetch(`${apiUrl}User/Search/GlobalName/0/`, {
       headers: { 'X-API-Key': apiKey },
       method: 'POST',
-      body: JSON.stringify({"displayNamePrefix" : bungieName}),
+      body: JSON.stringify({ "displayNamePrefix": bungieName }),
     })
     const data = await response.json();
     // let membershipId = await data.Response[0].membershipId;
     // let membershipType = await data.Response[0].membershipType;
     // getCharacterEquipment(membershipType, membershipId);
-    console.log(await data)
+    console.log(await data.Response.searchResults);
+    searchResults(await data.Response.searchResults);
   } catch (error) {
     errorMessage(error);
   }
@@ -113,51 +112,38 @@ function errorMessage(message) {
   document.getElementById("loader").style.display = "none";
 }
 
-function InputForm() {
+function searchResults(searchArray) {
+  let i = 0;
+  console.log("these are search results")
+  while (i < 5 && i < searchArray.length) {
+    console.log(searchArray[i]);
+    i += 1;
+  }
+
+}
+
+function App() {
   const [bungieName, setBungieName] = useState("");
+
+  //handels submission of the form, stops from refreshing the page and sets the variable to what is in the input field.
   function handleForm() {
     event.preventDefault();
     setBungieName(bungieName);
     console.log(bungieName);
+    getBungieId(bungieName);
   }
 
-  return (
-    <form id="bungieIdForm" onSubmit={() => handleForm()}>
-      <label for="nameInput">Enter a Bungie Id</label>
-      <input type="text" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={bungieName} onChange={(event) => setBungieName(event.target.value)} required />
-      <button>Search</button>
-    </form>
-  )
-}
 
-function App() {
 
   return (
     <>
-      <InputForm />
+      <form id="bungieIdForm" onSubmit={() => handleForm()}>
+        <label for="nameInput">Enter a Bungie Id</label>
+        <input type="text" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={bungieName} onChange={(event) => setBungieName(event.target.value)} required />
+        <button>Search</button>
+      </form>
       {/* <div className={props.shouldHide ? 'hidden' : undefined} >
         </div> */}
-
-      {/* <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p> */}
     </>
   )
 }
