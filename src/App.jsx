@@ -12,6 +12,7 @@ const imgPath = "https://www.bungie.net";
 //bungieName is the name given by the user which is then split by "#" and made into an array
 async function getBungieId(bungieName) {
   event.preventDefault();
+  console.log(bungieName);
 
   // document.getElementById("loader").style.display = "block";
   // document.getElementById("error-message").style.display = "none";
@@ -28,11 +29,10 @@ async function getBungieId(bungieName) {
     //   method: 'POST',
     //   body: JSON.stringify(body),
     // });
-    const response = await fetch(`${apiUrl}/User/Search/GlobalName/0/`, {
+    const response = await fetch(`${apiUrl}User/Search/GlobalName/0/`, {
       headers: { 'X-API-Key': apiKey },
       method: 'POST',
-      // body: JSON.stringify(body),
-      body: bungieName,
+      body: JSON.stringify({"displayNamePrefix" : bungieName}),
     })
     const data = await response.json();
     // let membershipId = await data.Response[0].membershipId;
@@ -114,27 +114,23 @@ function errorMessage(message) {
 }
 
 function InputForm() {
-  const [bungieNameInput, setNewTodo] = useState("");
+  const [bungieName, setBungieName] = useState("");
+  function handleForm() {
+    event.preventDefault();
+    setBungieName(bungieName);
+    console.log(bungieName);
+  }
 
   return (
-    <form id="bungieIdForm" onSubmit={() => getBungieId(bungieNameInput)}>
+    <form id="bungieIdForm" onSubmit={() => handleForm()}>
       <label for="nameInput">Enter a Bungie Id</label>
-      <input type="text" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={bungieNameInput} onChange={(event) => setNewTodo(event.target.value)}
-        required />
+      <input type="text" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={bungieName} onChange={(event) => setBungieName(event.target.value)} required />
       <button>Search</button>
     </form>
   )
 }
 
-
-// document.getElementById("bungieIdForm").addEventListener("submit", event => {
-//   event.preventDefault();
-//   getBungieId(document.getElementById("nameInput").value);
-// });
-
 function App() {
-  const [count, setCount] = useState(0)
-
 
   return (
     <>
