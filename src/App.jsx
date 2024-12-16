@@ -162,15 +162,6 @@ let staticCharacters = {
 //function to get bungie id from user-input text
 //bungieName is the name given by the user which is then split by "#" and made into an array
 async function getBungieId(bungieName) {
-
-  // document.getElementById("loader").style.display = "block";
-  // document.getElementById("error-message").style.display = "none";
-  // document.getElementById("main-div").style.display = "none";
-  // document.getElementById("player-name").innerHTML = bungieName;
-
-  // let nameArray = bungieName.split("#");
-  // let body = { "displayName": nameArray[0], "displayNameCode": nameArray[1] };
-
   //searches the bungie API using a POST request with the bungie name and 4 digit number passed into the body of the post request.
   try {
     // const response = await fetch(`${apiUrl}/Destiny2/SearchDestinyPlayerByBungieName/all/`, {
@@ -187,8 +178,7 @@ async function getBungieId(bungieName) {
     // let membershipId = await data.Response[0].membershipId;
     // let membershipType = await data.Response[0].membershipType;
     // getCharacterEquipment(membershipType, membershipId);
-    console.log(await data.Response.searchResults);
-    searchResults(await data.Response.searchResults);
+    return searchResults(await data.Response.searchResults);
   } catch (error) {
     errorMessage(error);
   }
@@ -201,7 +191,8 @@ async function getCharacterEquipment(membershipType, membershipId) {
       headers: { 'X-API-Key': apiKey }
     });
     const data = await response.json();
-    displayItems(recentlyPlayed(data.Response.characters.data), data.Response.characterEquipment.data)
+    // displayItems(recentlyPlayed(data.Response.characters.data), data.Response.characterEquipment.data)
+    return (data.Response.characterEquipment.data)
   } catch (error) {
     errorMessage(error);
   }
@@ -216,7 +207,7 @@ async function getEntityDefinition(entityId) {
       headers: { 'X-API-Key': apiKey }
     });
     const data = await response.json();
-    return (data.Response);
+    return (await data.Response);
   } catch (error) {
     errorMessage(error);
   }
@@ -239,27 +230,10 @@ function recentlyPlayed(characterList) {
   return recentCharacter;
 }
 
-//takes the character id of one specific character and a object containing a list of items on all the characters
-//takes the equipment and displays it in the HTML
-async function displayItems(characterId, characterItems) {
-  const elements = document.getElementsByClassName("item");
-  for (const itemIndex in characterItems[characterId].items) {
-    let entityId = characterItems[characterId].items[itemIndex].itemHash;
-    let itemInfo = await getEntityDefinition(entityId);
-    if (elements.item(itemIndex) != null) {
-      elements.item(itemIndex).getElementsByTagName("p")[0].innerHTML = itemInfo.displayProperties.name;
-      elements.item(itemIndex).getElementsByTagName("img")[0].src = `${imgPath}${itemInfo.displayProperties.icon}`;
-      elements.item(itemIndex).getElementsByTagName("img")[1].src = `${imgPath}${itemInfo.iconWatermark}`;
-    }
-  }
-  document.getElementById("main-div").style.display = "grid";
-  document.getElementById("loader").style.display = "none";
-}
-
 function errorMessage(message) {
   console.log(message);
-  document.getElementById("error-message").style.display = "block";
-  document.getElementById("loader").style.display = "none";
+  // document.getElementById("error-message").style.display = "block";
+  // document.getElementById("loader").style.display = "none";
 }
 
 function searchResults(searchArray) {
@@ -271,8 +245,22 @@ function searchResults(searchArray) {
   }
 }
 
-function CharacterItems() {
+function CharacterItems(props) {
 
+  const [items, setItems] = useState([]);
+
+
+    useEffect(() => {
+      for (let i = 0; i <= 7; i ++) {
+      async function getEntityInformation() {
+        let info = await getEntityDefinition(props.items[props.character].items[i].itemHash);
+        setItems(previousState => { return [...previousState, <p>{info.displayProperties.name} hello {i}</p>]});
+      }
+      getEntityInformation();
+  }}, [])
+  return (
+    <div className={props.hidden ? "hidden" : ""}>{items}</div>
+  )
 }
 
 
@@ -281,9 +269,9 @@ function Characters(props) {
   let characterList = [];
   for (const individual in staticCharacters) {
     if (props.active === individual) {
-      characterList = [characterList, <p>This is character {individual}</p>]
+      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={false} character={individual} />]
     } else {
-      characterList = [characterList, <p className="hidden">This is character {individual}</p>]
+      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={true} character={individual} />]
     }
   }
   return <div>{characterList}</div>
@@ -301,7 +289,7 @@ function SearchPrint(props) {
 
   return (
     <div>
-      <p>Search Results</p>
+      <p>Search Results {props.results}</p>
     </div>
   )
 }
@@ -312,33 +300,39 @@ function App() {
   const [bungieName, setBungieName] = useState("");
   const [search, setSearch] = useState("");
   const [activeCharacter, setActiveCharacter] = useState("");
+  const [characterItems, setCharacterItems] = useState({});
+
+
 
   function CharacterEmblems(props) {
     let characterList = []
     for (const individual in staticCharacters) {
       if (props.active === individual) {
-        characterList = [characterList, <img className="active" src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual) }} />]
+        characterList = [characterList, <img key={individual} className="active" src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} />]
       } else {
-        characterList = [characterList, <img src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual); console.log(activeCharacter)}} />]
+        characterList = [characterList, <img key={individual} src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual) }} />]
       }
     }
-    // let individual = staticCharacters.map(
-    //   item => (<p>item.minutesPlayedTotal</p>)
-    // )
     return <div>{characterList}</div>
   }
 
-  //only runs on the first go
+  //only runs on the first go to select the active character as the one who is most recently played
   useEffect(() => {
-      setActiveCharacter(recentlyPlayed(staticCharacters));
-  }, [])
-  // setActiveCharacter(recentlyPlayed(staticCharacters));
+    setActiveCharacter(recentlyPlayed(staticCharacters));
+
+    async function getCharacterItems() {
+      const characterItems = await getCharacterEquipment(staticCharacters[Object.keys(staticCharacters)[0]].membershipType, staticCharacters[Object.keys(staticCharacters)[0]].membershipId);
+      setCharacterItems(characterItems);
+    }
+
+    getCharacterItems();
+  }, [bungieName])
 
 
   //handels submission of the form, stops from refreshing the page and sets the variable to what is in the input field.
   function handleForm() {
     event.preventDefault();
-    setBungieName(bungieName);
+    setBungieName(search);
   }
 
 
@@ -346,16 +340,15 @@ function App() {
     <>
       <form id="bungieIdForm" onSubmit={() => handleForm()}>
         <label for="nameInput">Enter a Bungie Id</label>
-        <input type="text" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={bungieName} onChange={(event) => {
-          setBungieName(event.target.value);
+        <input type="text" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={search} onChange={(event) => {
           setSearch(event.target.value);
         }} required />
         <button>Search</button>
       </form>
       <SearchPrint results={search} />
 
-      <CharacterEmblems active={activeCharacter}/>
-      <Characters active={activeCharacter}/>
+      <CharacterEmblems active={activeCharacter} />
+      <Characters active={activeCharacter} items={characterItems} />
     </>
   )
 }
