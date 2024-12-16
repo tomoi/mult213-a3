@@ -246,18 +246,30 @@ function searchResults(searchArray) {
 }
 
 function CharacterItems(props) {
-
   const [items, setItems] = useState([]);
 
-
-    useEffect(() => {
-      for (let i = 0; i <= 7; i ++) {
+  useEffect(() => {
+    for (let i = 0; i <= 7; i++) {
       async function getEntityInformation() {
-        let info = await getEntityDefinition(props.items[props.character].items[i].itemHash);
-        setItems(previousState => { return [...previousState, <p>{info.displayProperties.name} hello {i}</p>]});
+        try {
+          const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${props.items[props.character].items[i].itemHash}/`, {
+            headers: { 'X-API-Key': apiKey }
+          });
+          const data = await response.json();
+          setItems(items => [...items, <p>{data.Response.displayProperties.name} hello {i}</p>])
+          // setItems([...items, <p>{data.Response.displayProperties.name} hello {i}</p>]);
+        } catch (error) {
+          errorMessage(error);
+        }
+        // let info = await getEntityDefinition(props.items[props.character].items[i].itemHash);
+        // setItems(previousState => { return [...previousState, <p>{info.displayProperties.name} hello {i}</p>] });
       }
       getEntityInformation();
-  }}, [])
+      // console.log(items);
+    }
+  }, [props.name]);
+
+  console.log(items);
   return (
     <div className={props.hidden ? "hidden" : ""}>{items}</div>
   )
@@ -269,9 +281,9 @@ function Characters(props) {
   let characterList = [];
   for (const individual in staticCharacters) {
     if (props.active === individual) {
-      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={false} character={individual} />]
+      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={false} character={individual} name={props.name} />]
     } else {
-      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={true} character={individual} />]
+      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={true} character={individual} name={props.name} />]
     }
   }
   return <div>{characterList}</div>
@@ -293,8 +305,6 @@ function SearchPrint(props) {
     </div>
   )
 }
-
-
 
 function App() {
   const [bungieName, setBungieName] = useState("");
@@ -348,7 +358,7 @@ function App() {
       <SearchPrint results={search} />
 
       <CharacterEmblems active={activeCharacter} />
-      <Characters active={activeCharacter} items={characterItems} />
+      <Characters active={activeCharacter} items={characterItems} name={bungieName} />
     </>
   )
 }
