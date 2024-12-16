@@ -235,8 +235,7 @@ function recentlyPlayed(characterList) {
       recentDate = newDate;
     }
   }
-  //puts the player emblem into the document
-  document.getElementById("player-emblem-long").src = `${imgPath}${characterList[recentCharacter].emblemBackgroundPath}`
+  //returns id of recent character
   return recentCharacter;
 }
 
@@ -272,21 +271,37 @@ function searchResults(searchArray) {
   }
 }
 
+function CharacterItems() {
+
+}
+
+
+
+function Characters(props) {
+  let characterList = [];
+  for (const individual in staticCharacters) {
+    if (props.active === individual) {
+      characterList = [characterList, <p>This is character {individual}</p>]
+    } else {
+      characterList = [characterList, <p className="hidden">This is character {individual}</p>]
+    }
+  }
+  return <div>{characterList}</div>
+}
+
 function SearchPrint(props) {
-  // let listOfResults = getBungieId(props.results)
   useEffect(() => {
     const searchDelay = setTimeout(() => {
-      console.log(props.results);
       return (getBungieId(props.results));
     }, 1500)
 
     return () => clearTimeout(searchDelay)
   }, [props.results])
 
-  
+
   return (
     <div>
-      <p>Search Results {searchList}</p>
+      <p>Search Results</p>
     </div>
   )
 }
@@ -296,13 +311,35 @@ function SearchPrint(props) {
 function App() {
   const [bungieName, setBungieName] = useState("");
   const [search, setSearch] = useState("");
+  const [activeCharacter, setActiveCharacter] = useState("");
+
+  function CharacterEmblems(props) {
+    let characterList = []
+    for (const individual in staticCharacters) {
+      if (props.active === individual) {
+        characterList = [characterList, <img className="active" src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual) }} />]
+      } else {
+        characterList = [characterList, <img src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual); console.log(activeCharacter)}} />]
+      }
+    }
+    // let individual = staticCharacters.map(
+    //   item => (<p>item.minutesPlayedTotal</p>)
+    // )
+    return <div>{characterList}</div>
+  }
+
+  //only runs on the first go
+  useEffect(() => {
+      setActiveCharacter(recentlyPlayed(staticCharacters));
+  }, [])
+  // setActiveCharacter(recentlyPlayed(staticCharacters));
+
 
   //handels submission of the form, stops from refreshing the page and sets the variable to what is in the input field.
   function handleForm() {
     event.preventDefault();
     setBungieName(bungieName);
   }
-
 
 
   return (
@@ -316,8 +353,9 @@ function App() {
         <button>Search</button>
       </form>
       <SearchPrint results={search} />
-      {/* <div className={props.shouldHide ? 'hidden' : undefined} >
-        </div> */}
+
+      <CharacterEmblems active={activeCharacter}/>
+      <Characters active={activeCharacter}/>
     </>
   )
 }
