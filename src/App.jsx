@@ -215,7 +215,6 @@ function errorMessage(message) {
 function searchResults(searchArray) {
   let searchItems = []
   let i = 0;
-  console.log("these are search results")
   while (i < 5 && i < searchArray.length) {
     // console.log(searchArray[i]);
     searchItems = [...searchItems, searchArray[i]]
@@ -226,7 +225,7 @@ function searchResults(searchArray) {
 
 function CharacterItems(props) {
   if (props.items != undefined) {
-    return (<div className={props.hidden ? "hidden" : ""}>{props.items[props.character]}</div>)
+    return (<div className={props.hidden ? "hidden" : "not-hidden"}>{props.items[props.character]}</div>)
   } else {
     return (<p>Loading</p>)
   }
@@ -243,7 +242,7 @@ function Characters(props) {
       characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={true} character={individual} name={props.name} active={props.active} />]
     }
   }
-  return <div>{characterList}</div>
+  return <div className="character-items">{characterList}</div>
 }
 
 function SearchPrint(props) {
@@ -273,9 +272,7 @@ function SearchPrint(props) {
 
   }
   return (
-    <div>
-      <div>{searchList}</div>
-    </div>
+    <div className="search-results">{searchList}</div>
   )
 }
 
@@ -328,10 +325,10 @@ function App() {
       if (props.active === individual) {
         characterList = [characterList, <img key={individual} className="active" src={`${imgPath}${character[individual].emblemBackgroundPath}`} />]
       } else {
-        characterList = [characterList, <img key={individual} src={`${imgPath}${character[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual) }} />]
+        characterList = [characterList, <img key={individual} className="not-active" src={`${imgPath}${character[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual) }} />]
       }
     }
-    return <div>{characterList}</div>
+    return <div className="emblems">{characterList}</div>
   }
 
   //only runs on the first go to select the active character as the one who is most recently played
@@ -349,25 +346,16 @@ function App() {
     return () => { };
   }, [bungieName])
 
-
-  //handels submission of the form, stops from refreshing the page and sets the variable to what is in the input field.
-  function handleForm() {
-    event.preventDefault();
-    setBungieName(search);
-  }
-
-
   return (
-    <>
-      <form id="bungieIdForm" onSubmit={() => handleForm()}>
+    <><div className="search">
+      <form onSubmit={() => {event.preventDefault()}}>
         <label for="nameInput">Enter a Bungie Id</label>
-        <input type="text" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={search} onChange={(event) => {
+        <input type="text" autocomplete="off" name="nameInput" id="nameInput" placeholder="ex. name#1234" value={search} onChange={(event) => {
           setSearch(event.target.value);
         }} required />
-        <button>Search</button>
       </form>
       <SearchPrint results={search} variable={setBungieName} search={setSearch} />
-
+    </div>
       <CharacterEmblems active={activeCharacter} />
       <Characters active={activeCharacter} items={characterItems} name={bungieName} character={character} />
     </>
