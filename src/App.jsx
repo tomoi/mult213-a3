@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 const apiKey = "fd5e12522935425197fc964d95235df6";
@@ -164,11 +162,6 @@ let staticCharacters = {
 async function getBungieId(bungieName) {
   //searches the bungie API using a POST request with the bungie name and 4 digit number passed into the body of the post request.
   try {
-    // const response = await fetch(`${apiUrl}/Destiny2/SearchDestinyPlayerByBungieName/all/`, {
-    //   headers: { 'X-API-Key': apiKey },
-    //   method: 'POST',
-    //   body: JSON.stringify(body),
-    // });
     const response = await fetch(`${apiUrl}User/Search/GlobalName/0/`, {
       headers: { 'X-API-Key': apiKey },
       method: 'POST',
@@ -184,30 +177,16 @@ async function getBungieId(bungieName) {
 //get character equipment information and character information using membership id and type
 async function getCharacterEquipment(membershipType, membershipId) {
   try {
-    const response = await fetch(`${apiUrl}/Destiny2/${membershipType}/Profile/${membershipId}/?components=Characters,CharacterEquipment`, {
+    const response = await fetch(`${apiUrl}/Destiny2/${membershipType}/Profile/${membershipId}/?components=Characters`, {
       headers: { 'X-API-Key': apiKey }
     });
     const data = await response.json();
-    // displayItems(recentlyPlayed(data.Response.characters.data), data.Response.characterEquipment.data)
-    return (data.Response.characterEquipment.data)
+    // console.log(data.Response.characters.data);
+    return (data.Response.characters.data)
   } catch (error) {
     errorMessage(error);
   }
 
-}
-
-//takes the entityId and asks the api for information on the entity
-//returns the data of one specific item
-async function getEntityDefinition(entityId) {
-  try {
-    const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${entityId}/`, {
-      headers: { 'X-API-Key': apiKey }
-    });
-    const data = await response.json();
-    return (await data.Response);
-  } catch (error) {
-    errorMessage(error);
-  }
 }
 
 //takes the object that contains all the characters and parses through it to find the most recently played character
@@ -246,14 +225,18 @@ function searchResults(searchArray) {
 }
 
 function CharacterItems(props) {
-  return (<div className={props.hidden ? "hidden" : ""}>{props.items[props.character]}</div>)
+  if (props.items != undefined) {
+    return (<div className={props.hidden ? "hidden" : ""}>{props.items[props.character]}</div>)
+  } else {
+    return (<p>Loading</p>)
+  }
 }
 
 
 
 function Characters(props) {
   let characterList = [];
-  for (const individual in staticCharacters) {
+  for (const individual in props.character) {
     if (props.active === individual) {
       characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={false} character={individual} name={props.name} active={props.active} />]
     } else {
@@ -281,17 +264,24 @@ function SearchPrint(props) {
     return () => clearTimeout(searchDelay)
   }, [props.results])
 
-  // console.log(searchResults);
+  let searchList = []
+  for (const individual in searchResults) {
+    searchList = [...searchList, <p onClick={() => {
+      props.variable(() => [searchResults[individual].destinyMemberships[0].membershipId, searchResults[individual].destinyMemberships[0].membershipType]);
+      props.search("")
+    }}>{searchResults[individual].bungieGlobalDisplayName}#{searchResults[individual].bungieGlobalDisplayNameCode}</p>];
+
+  }
   return (
     <div>
-      <p>Search Results</p>
+      <div>{searchList}</div>
     </div>
   )
 }
 
-async function getCharacterItems() {
+async function getCharacterItems(character) {
   try {
-    const response = await fetch(`${apiUrl}/Destiny2/${staticCharacters[Object.keys(staticCharacters)[0]].membershipType}/Profile/${staticCharacters[Object.keys(staticCharacters)[0]].membershipId}/?components=Characters,CharacterEquipment`, {
+    const response = await fetch(`${apiUrl}/Destiny2/${character[Object.keys(character)[0]].membershipType}/Profile/${character[Object.keys(character)[0]].membershipId}/?components=Characters,CharacterEquipment`, {
       headers: { 'X-API-Key': apiKey }
     });
     const data = await response.json();
@@ -307,14 +297,13 @@ async function getIndividualItems(items) {
   let charactersList = [];
   let itemsList = [];
   for (var character in items) {
-    console.log(character);
     for (let i = 0; i <= 7; i++) {
       try {
         const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${items[character].items[i].itemHash}/`, {
           headers: { 'X-API-Key': apiKey }
         });
         const data = await response.json();
-        itemsList = [...itemsList, <div><p>{await data.Response.displayProperties.name}</p> <img src={`${imgPath}${data.Response.displayProperties.icon}`}/></div>];
+        itemsList = [...itemsList, <div><p>{await data.Response.displayProperties.name}</p> <img src={`${imgPath}${data.Response.displayProperties.icon}`} /></div>];
       } catch (error) {
         errorMessage(error);
       }
@@ -327,18 +316,19 @@ async function getIndividualItems(items) {
 
 
 function App() {
-  const [bungieName, setBungieName] = useState("");
+  const [bungieName, setBungieName] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCharacter, setActiveCharacter] = useState("");
   const [characterItems, setCharacterItems] = useState([]);
+  const [character, setCharacter] = useState({});
 
   function CharacterEmblems(props) {
     let characterList = []
-    for (const individual in staticCharacters) {
+    for (const individual in character) {
       if (props.active === individual) {
-        characterList = [characterList, <img key={individual} className="active" src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} />]
+        characterList = [characterList, <img key={individual} className="active" src={`${imgPath}${character[individual].emblemBackgroundPath}`} />]
       } else {
-        characterList = [characterList, <img key={individual} src={`${imgPath}${staticCharacters[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual) }} />]
+        characterList = [characterList, <img key={individual} src={`${imgPath}${character[individual].emblemBackgroundPath}`} onClick={() => { setActiveCharacter(individual) }} />]
       }
     }
     return <div>{characterList}</div>
@@ -346,10 +336,14 @@ function App() {
 
   //only runs on the first go to select the active character as the one who is most recently played
   useEffect(() => {
-    setActiveCharacter(recentlyPlayed(staticCharacters));
+
 
     (async () => {
-      const fillerName = await getCharacterItems(characterItems);
+      const newCharacter = await getCharacterEquipment(bungieName[1], bungieName[0]);
+      setCharacter(newCharacter);
+      setActiveCharacter(recentlyPlayed(newCharacter));
+
+      const fillerName = await getCharacterItems(newCharacter);
       setCharacterItems(fillerName);
     })();
     return () => { };
@@ -372,10 +366,10 @@ function App() {
         }} required />
         <button>Search</button>
       </form>
-      <SearchPrint results={search} />
+      <SearchPrint results={search} variable={setBungieName} search={setSearch} />
 
       <CharacterEmblems active={activeCharacter} />
-      <Characters active={activeCharacter} items={characterItems} name={bungieName} />
+      <Characters active={activeCharacter} items={characterItems} name={bungieName} character={character} />
     </>
   )
 }
