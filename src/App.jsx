@@ -246,31 +246,7 @@ function searchResults(searchArray) {
 }
 
 function CharacterItems(props) {
-
-  // useEffect(() => {
-  //   for (let i = 0; i <= 7; i++) {
-  //     async function getEntityInformation() {
-  //       try {
-  //         const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${props.items[props.character].items[i].itemHash}/`, {
-  //           headers: { 'X-API-Key': apiKey }
-  //         });
-  //         const data = await response.json();
-  //         setItems(items => [...items, <p>{data.Response.displayProperties.name} hello {i}</p>])
-  //         // setItems([...items, <p>{data.Response.displayProperties.name} hello {i}</p>]);
-  //       } catch (error) {
-  //         errorMessage(error);
-  //       }
-  //       // let info = await getEntityDefinition(props.items[props.character].items[i].itemHash);
-  //       // setItems(previousState => { return [...previousState, <p>{info.displayProperties.name} hello {i}</p>] });
-  //     }
-  //     getEntityInformation();
-  //     // console.log(items);
-  //   }
-  // }, [props.name]);
-
-  // return (
-  //   <div className={props.hidden ? "hidden" : ""}>{items}</div>
-  // )
+  return (<div className={props.hidden ? "hidden" : ""}>{props.items[props.character]}</div>)
 }
 
 
@@ -279,9 +255,9 @@ function Characters(props) {
   let characterList = [];
   for (const individual in staticCharacters) {
     if (props.active === individual) {
-      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={false} character={individual} name={props.name} />]
+      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={false} character={individual} name={props.name} active={props.active} />]
     } else {
-      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={true} character={individual} name={props.name} />]
+      characterList = [characterList, <CharacterItems key={individual} items={props.items} hidden={true} character={individual} name={props.name} active={props.active} />]
     }
   }
   return <div>{characterList}</div>
@@ -297,7 +273,7 @@ function SearchPrint(props) {
         results = await getBungieId(props.results);
         setSearchResults(results);
       })();
-      
+
     }, 1500)
 
 
@@ -305,7 +281,7 @@ function SearchPrint(props) {
     return () => clearTimeout(searchDelay)
   }, [props.results])
 
-  console.log(searchResults);
+  // console.log(searchResults);
   return (
     <div>
       <p>Search Results</p>
@@ -331,37 +307,23 @@ async function getIndividualItems(items) {
   let charactersList = [];
   let itemsList = [];
   for (var character in items) {
+    console.log(character);
     for (let i = 0; i <= 7; i++) {
       try {
         const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${items[character].items[i].itemHash}/`, {
           headers: { 'X-API-Key': apiKey }
         });
         const data = await response.json();
-        itemsList = [...itemsList, <p>{await data.Response.displayProperties.name} hello {i}</p>];
+        itemsList = [...itemsList, <div><p>{await data.Response.displayProperties.name}</p> <img src={`${imgPath}${data.Response.displayProperties.icon}`}/></div>];
       } catch (error) {
         errorMessage(error);
       }
     }
-    charactersList = [...charactersList, itemsList];
-    console.log(charactersList);
+    charactersList = { ...charactersList, ...{ [character]: itemsList } };
     itemsList = [];
   }
   return charactersList;
 }
-
-function CharacterEquipment(props) {
-  // console.log(props.items);
-  return (
-    // <div>Hello</div>
-    <div>
-      <div>{props.items[0]}</div>
-      <div>{props.items[1]}</div>
-      <div>{props.items[2]}</div>
-    </div>
-
-  )
-}
-
 
 
 function App() {
@@ -369,10 +331,6 @@ function App() {
   const [search, setSearch] = useState("");
   const [activeCharacter, setActiveCharacter] = useState("");
   const [characterItems, setCharacterItems] = useState([]);
-  const [items, setItems] = useState([]);
-
-
-
 
   function CharacterEmblems(props) {
     let characterList = []
@@ -394,9 +352,6 @@ function App() {
       const fillerName = await getCharacterItems(characterItems);
       setCharacterItems(fillerName);
     })();
-
-    console.log(characterItems);
-
     return () => { };
   }, [bungieName])
 
@@ -421,7 +376,6 @@ function App() {
 
       <CharacterEmblems active={activeCharacter} />
       <Characters active={activeCharacter} items={characterItems} name={bungieName} />
-      <CharacterEquipment items={characterItems} />
     </>
   )
 }
