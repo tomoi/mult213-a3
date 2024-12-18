@@ -246,33 +246,31 @@ function searchResults(searchArray) {
 }
 
 function CharacterItems(props) {
-  const [items, setItems] = useState([]);
 
-  useEffect(() => {
-    for (let i = 0; i <= 7; i++) {
-      async function getEntityInformation() {
-        try {
-          const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${props.items[props.character].items[i].itemHash}/`, {
-            headers: { 'X-API-Key': apiKey }
-          });
-          const data = await response.json();
-          setItems(items => [...items, <p>{data.Response.displayProperties.name} hello {i}</p>])
-          // setItems([...items, <p>{data.Response.displayProperties.name} hello {i}</p>]);
-        } catch (error) {
-          errorMessage(error);
-        }
-        // let info = await getEntityDefinition(props.items[props.character].items[i].itemHash);
-        // setItems(previousState => { return [...previousState, <p>{info.displayProperties.name} hello {i}</p>] });
-      }
-      getEntityInformation();
-      // console.log(items);
-    }
-  }, [props.name]);
+  // useEffect(() => {
+  //   for (let i = 0; i <= 7; i++) {
+  //     async function getEntityInformation() {
+  //       try {
+  //         const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${props.items[props.character].items[i].itemHash}/`, {
+  //           headers: { 'X-API-Key': apiKey }
+  //         });
+  //         const data = await response.json();
+  //         setItems(items => [...items, <p>{data.Response.displayProperties.name} hello {i}</p>])
+  //         // setItems([...items, <p>{data.Response.displayProperties.name} hello {i}</p>]);
+  //       } catch (error) {
+  //         errorMessage(error);
+  //       }
+  //       // let info = await getEntityDefinition(props.items[props.character].items[i].itemHash);
+  //       // setItems(previousState => { return [...previousState, <p>{info.displayProperties.name} hello {i}</p>] });
+  //     }
+  //     getEntityInformation();
+  //     // console.log(items);
+  //   }
+  // }, [props.name]);
 
-  console.log(items);
-  return (
-    <div className={props.hidden ? "hidden" : ""}>{items}</div>
-  )
+  // return (
+  //   <div className={props.hidden ? "hidden" : ""}>{items}</div>
+  // )
 }
 
 
@@ -306,11 +304,54 @@ function SearchPrint(props) {
   )
 }
 
+async function getCharacterItems() {
+  try {
+    const response = await fetch(`${apiUrl}/Destiny2/${staticCharacters[Object.keys(staticCharacters)[0]].membershipType}/Profile/${staticCharacters[Object.keys(staticCharacters)[0]].membershipId}/?components=Characters,CharacterEquipment`, {
+      headers: { 'X-API-Key': apiKey }
+    });
+    const data = await response.json();
+    // displayItems(recentlyPlayed(data.Response.characters.data), data.Response.characterEquipment.data)
+    let characterItems = await data.Response.characterEquipment.data;
+    return await getIndividualItems(await characterItems);
+  } catch (error) {
+    errorMessage(error);
+  }
+}
+
+async function getIndividualItems(items) {
+  let itemsList = []
+  for (let i = 0; i <= 7; i++) {
+    try {
+      const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${items[Object.keys(items)[0]].items[i].itemHash}/`, {
+        headers: { 'X-API-Key': apiKey }
+      });
+      const data = await response.json();
+      itemsList = [...itemsList, <p>{await data.Response.displayProperties.name} hello {i}</p>];
+      // console.log(itemsList);
+    } catch (error) {
+      errorMessage(error);
+    }
+  }
+  return itemsList;
+}
+
+function CharacterEquipment(props) {
+  console.log(props.items);
+  return (
+    // <div>Hello</div>
+    <div>{props.items}</div>
+  )
+}
+
+
+
 function App() {
   const [bungieName, setBungieName] = useState("");
   const [search, setSearch] = useState("");
   const [activeCharacter, setActiveCharacter] = useState("");
-  const [characterItems, setCharacterItems] = useState({});
+  const [characterItems, setCharacterItems] = useState([]);
+  const [items, setItems] = useState([]);
+
 
 
 
@@ -330,12 +371,14 @@ function App() {
   useEffect(() => {
     setActiveCharacter(recentlyPlayed(staticCharacters));
 
-    async function getCharacterItems() {
-      const characterItems = await getCharacterEquipment(staticCharacters[Object.keys(staticCharacters)[0]].membershipType, staticCharacters[Object.keys(staticCharacters)[0]].membershipId);
-      setCharacterItems(characterItems);
-    }
+    (async () => {
+      const fillerName = await getCharacterItems(characterItems);
+      setCharacterItems(fillerName);
+    })();
 
-    getCharacterItems();
+    console.log(characterItems);
+
+    return () => {};
   }, [bungieName])
 
 
@@ -359,6 +402,7 @@ function App() {
 
       <CharacterEmblems active={activeCharacter} />
       <Characters active={activeCharacter} items={characterItems} name={bungieName} />
+      <CharacterEquipment items={characterItems} />
     </>
   )
 }
