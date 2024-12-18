@@ -175,9 +175,6 @@ async function getBungieId(bungieName) {
       body: JSON.stringify({ "displayNamePrefix": bungieName }),
     })
     const data = await response.json();
-    // let membershipId = await data.Response[0].membershipId;
-    // let membershipType = await data.Response[0].membershipType;
-    // getCharacterEquipment(membershipType, membershipId);
     return searchResults(await data.Response.searchResults);
   } catch (error) {
     errorMessage(error);
@@ -237,12 +234,15 @@ function errorMessage(message) {
 }
 
 function searchResults(searchArray) {
+  let searchItems = []
   let i = 0;
   console.log("these are search results")
   while (i < 5 && i < searchArray.length) {
-    console.log(searchArray[i]);
+    // console.log(searchArray[i]);
+    searchItems = [...searchItems, searchArray[i]]
     i += 1;
   }
+  return searchItems;
 }
 
 function CharacterItems(props) {
@@ -288,18 +288,27 @@ function Characters(props) {
 }
 
 function SearchPrint(props) {
+  const [searchResults, setSearchResults] = useState([]);
+
+  let results = []
   useEffect(() => {
     const searchDelay = setTimeout(() => {
-      return (getBungieId(props.results));
+      (async () => {
+        results = await getBungieId(props.results);
+        setSearchResults(results);
+      })();
+      
     }, 1500)
+
+
 
     return () => clearTimeout(searchDelay)
   }, [props.results])
 
-
+  console.log(searchResults);
   return (
     <div>
-      <p>Search Results {props.results}</p>
+      <p>Search Results</p>
     </div>
   )
 }
@@ -319,27 +328,37 @@ async function getCharacterItems() {
 }
 
 async function getIndividualItems(items) {
-  let itemsList = []
-  for (let i = 0; i <= 7; i++) {
-    try {
-      const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${items[Object.keys(items)[0]].items[i].itemHash}/`, {
-        headers: { 'X-API-Key': apiKey }
-      });
-      const data = await response.json();
-      itemsList = [...itemsList, <p>{await data.Response.displayProperties.name} hello {i}</p>];
-      // console.log(itemsList);
-    } catch (error) {
-      errorMessage(error);
+  let charactersList = [];
+  let itemsList = [];
+  for (var character in items) {
+    for (let i = 0; i <= 7; i++) {
+      try {
+        const response = await fetch(`${apiUrl}/Destiny2/Manifest/DestinyInventoryItemDefinition/${items[character].items[i].itemHash}/`, {
+          headers: { 'X-API-Key': apiKey }
+        });
+        const data = await response.json();
+        itemsList = [...itemsList, <p>{await data.Response.displayProperties.name} hello {i}</p>];
+      } catch (error) {
+        errorMessage(error);
+      }
     }
+    charactersList = [...charactersList, itemsList];
+    console.log(charactersList);
+    itemsList = [];
   }
-  return itemsList;
+  return charactersList;
 }
 
 function CharacterEquipment(props) {
-  console.log(props.items);
+  // console.log(props.items);
   return (
     // <div>Hello</div>
-    <div>{props.items}</div>
+    <div>
+      <div>{props.items[0]}</div>
+      <div>{props.items[1]}</div>
+      <div>{props.items[2]}</div>
+    </div>
+
   )
 }
 
@@ -378,7 +397,7 @@ function App() {
 
     console.log(characterItems);
 
-    return () => {};
+    return () => { };
   }, [bungieName])
 
 
